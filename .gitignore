@@ -1,0 +1,17 @@
+# Runtime credentials / state — never commit
+tokens.json
+*.tokens.json
+fitdays_tokens*.json
+session.json
+.storage/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+.pytest_cache/
+.venv/
+venv/

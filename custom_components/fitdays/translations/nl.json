@@ -1,0 +1,61 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fitdays-account",
+        "description": "Log in met hetzelfde e-mailadres en wachtwoord als in de Fitdays-app. Je wachtwoord wordt gehasht voordat het verstuurd wordt en wordt nooit als platte tekst opgeslagen.",
+        "data": {
+          "email": "E-mailadres",
+          "password": "Wachtwoord",
+          "country": "Landcode"
+        },
+        "data_description": {
+          "country": "Tweeletterige code van het land waar je Fitdays-account geregistreerd is, bijvoorbeeld NL."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Fitdays opnieuw verbinden",
+        "description": "De opgeslagen sessie voor {email} is niet meer geldig. Voer het wachtwoord opnieuw in om te herverbinden.",
+        "data": {
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan geen verbinding maken met de Fitdays-cloud.",
+      "invalid_auth": "Ongeldig e-mailadres of wachtwoord.",
+      "unknown": "Onverwachte fout."
+    },
+    "abort": {
+      "already_configured": "Dit Fitdays-account is al ingesteld.",
+      "reauth_successful": "Opnieuw verbinden is gelukt."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "weight": { "name": "Gewicht" },
+      "bmi": { "name": "BMI" },
+      "body_fat": { "name": "Lichaamsvet" },
+      "body_fat_mass": { "name": "Vetmassa" },
+      "muscle": { "name": "Spieren" },
+      "muscle_mass": { "name": "Spiermassa" },
+      "skeletal_muscle": { "name": "Skeletspieren" },
+      "skeletal_muscle_mass": { "name": "Skeletspiermassa" },
+      "body_water": { "name": "Lichaamsvocht" },
+      "body_water_mass": { "name": "Vochtmassa" },
+      "bone_mass": { "name": "Botmassa" },
+      "protein": { "name": "Eiwit" },
+      "protein_mass": { "name": "Eiwitmassa" },
+      "subcutaneous_fat": { "name": "Onderhuids vet" },
+      "visceral_fat": { "name": "Visceraal vet" },
+      "bmr": { "name": "Basaal metabolisme" },
+      "body_age": { "name": "Lichaamsleeftijd" },
+      "heart_rate": { "name": "Hartslag" },
+      "impedance": { "name": "Impedantie" },
+      "target_weight": { "name": "Streefgewicht" },
+      "weight_to_target": { "name": "Nog te gaan" },
+      "measurement_count": { "name": "Metingen" },
+      "last_measurement": { "name": "Laatste meting" }
+    }
+  }
+}

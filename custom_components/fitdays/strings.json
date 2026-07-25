@@ -1,0 +1,61 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fitdays account",
+        "description": "Sign in with the same email and password you use in the Fitdays app. Your password is hashed before it is sent and is never stored in plain text.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "country": "Country code"
+        },
+        "data_description": {
+          "country": "Two-letter code of the country your Fitdays account is registered in, for example NL."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Fitdays",
+        "description": "The stored session for {email} is no longer valid. Enter the password again to reconnect.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Fitdays cloud.",
+      "invalid_auth": "Invalid email or password.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Fitdays account is already set up.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "weight": { "name": "Weight" },
+      "bmi": { "name": "BMI" },
+      "body_fat": { "name": "Body fat" },
+      "body_fat_mass": { "name": "Body fat mass" },
+      "muscle": { "name": "Muscle" },
+      "muscle_mass": { "name": "Muscle mass" },
+      "skeletal_muscle": { "name": "Skeletal muscle" },
+      "skeletal_muscle_mass": { "name": "Skeletal muscle mass" },
+      "body_water": { "name": "Body water" },
+      "body_water_mass": { "name": "Body water mass" },
+      "bone_mass": { "name": "Bone mass" },
+      "protein": { "name": "Protein" },
+      "protein_mass": { "name": "Protein mass" },
+      "subcutaneous_fat": { "name": "Subcutaneous fat" },
+      "visceral_fat": { "name": "Visceral fat" },
+      "bmr": { "name": "Basal metabolic rate" },
+      "body_age": { "name": "Body age" },
+      "heart_rate": { "name": "Heart rate" },
+      "impedance": { "name": "Impedance" },
+      "target_weight": { "name": "Target weight" },
+      "weight_to_target": { "name": "Weight to target" },
+      "measurement_count": { "name": "Measurements" },
+      "last_measurement": { "name": "Last measurement" }
+    }
+  }
+}
