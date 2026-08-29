@@ -82,19 +82,21 @@ Per member profile:
 | Last measurement | timestamp |
 | Subcutaneous fat, Heart rate, Impedance, Target weight, Weight to target, Measurements | disabled by default — enable as needed |
 
-Heart rate only reports on scales that measure it (`measureHeart`), and stays
-unavailable otherwise.
+Heart rate only reports on scales that measure it (`measures_heart_rate` on the
+device). On a scale without it the sensor stays *unknown*, not *unavailable*.
 
 ## Notes and limitations
 
 - **Cloud polling**, every 30 minutes. Scales are stepped on a couple of times a
   day, so there is nothing to gain from polling harder.
-- Weigh-ins taken without proper skin contact come back **weight-only** — no
-  impedance, so no body composition. Those sensors hold their last known good value
-  and the `weight_only` attribute on the weight sensor flags it.
+- Weigh-ins taken without proper skin contact come back **weight-only**, with no
+  impedance and so no body composition. The body-composition sensors go to
+  *unknown* for that weigh-in rather than holding their previous value, and the
+  `weight_only` attribute on the weight sensor flags why.
 - The integration is **read-only**. It never modifies your Fitdays account.
 - Brand artwork in `custom_components/fitdays/brand/` is a generic placeholder
-  glyph, not the vendor's logo.
+  glyph, not the vendor's logo. Home Assistant reads that folder from 2026.3.0
+  onward; on older cores the integration renders without an icon.
 
 ## Disclaimer
 
