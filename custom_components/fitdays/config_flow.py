@@ -10,10 +10,19 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 
 from .const import CONF_COUNTRY, DEFAULT_COUNTRY, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
+# A bare `str` renders the secret in clear text in the config form. TextSelector
+# with type PASSWORD makes the browser treat it as a password field.
+_SECRET = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 
 try:
     from fitdays import FitdaysClient
@@ -25,7 +34,7 @@ except ImportError as err:  # pragma: no cover - handled by manifest requirement
 STEP_USER_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_EMAIL): str,
-        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_PASSWORD): _SECRET,
         vol.Optional(CONF_COUNTRY, default=DEFAULT_COUNTRY): str,
     }
 )
@@ -120,7 +129,7 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=vol.Schema({vol.Required(CONF_PASSWORD): str}),
+            data_schema=vol.Schema({vol.Required(CONF_PASSWORD): _SECRET}),
             description_placeholders={"email": email},
             errors=errors,
         )
