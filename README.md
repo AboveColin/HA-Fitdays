@@ -93,8 +93,9 @@ device). On a scale without it the sensor stays *unknown*, not *unavailable*.
   unknown for that weigh-in rather than holding their previous value, and the
   `weight_only` attribute on the weight sensor says why.
 - The integration is read-only. It never writes to your Fitdays account.
-- Brand artwork in `custom_components/fitdays/brand/` is a generic placeholder
-  glyph, not the vendor's logo. Home Assistant reads that folder from 2026.3.0
+- Brand artwork lives in `custom_components/fitdays/brand/` (icon and logo, at
+  1x and 2x). The Fitdays teal square works on light and dark, so there are no
+  separate dark-mode variants. Home Assistant reads that folder from 2026.3.0
   onward; on older cores the integration renders without an icon.
 
 ## Disclaimer
