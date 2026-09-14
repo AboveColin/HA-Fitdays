@@ -26,18 +26,26 @@ _SECRET = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 
 try:
     from fitdays import FitdaysClient
-    from fitdays.exceptions import FitdaysAuthError, FitdaysError, FitdaysNetworkError
+    from fitdays.exceptions import (
+        FitdaysAuthError,
+        FitdaysError,
+        FitdaysNetworkError,
+        FitdaysValidationError,
+    )
 except ImportError as err:  # pragma: no cover - handled by manifest requirements
     _LOGGER.error("Failed to import the fitdays package: %s", err)
     raise
 
-STEP_USER_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_EMAIL): str,
-        vol.Required(CONF_PASSWORD): _SECRET,
-        vol.Optional(CONF_COUNTRY, default=DEFAULT_COUNTRY): str,
-    }
-)
+
+def _credentials_schema(email: str = "", country: str = DEFAULT_COUNTRY) -> vol.Schema:
+    """Build the email/password/country form, prefilled with what we know."""
+    return vol.Schema(
+        {
+            vol.Required(CONF_EMAIL, default=email): str,
+            vol.Required(CONF_PASSWORD): _SECRET,
+            vol.Optional(CONF_COUNTRY, default=country or DEFAULT_COUNTRY): str,
+        }
+    )
 
 
 class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -68,6 +76,10 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
             return None, "invalid_auth"
         except FitdaysNetworkError:
             return None, "cannot_connect"
+        except FitdaysValidationError:
+            # The client rejects blank input before it calls the cloud. That is
+            # a form problem, not an outage, so say so instead of "unknown".
+            return None, "invalid_auth"
         except FitdaysError as err:
             _LOGGER.error("Unexpected Fitdays error during login: %s", err)
             return None, "unknown"
@@ -95,7 +107,7 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(title=email, data=entry_data)
 
         return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_SCHEMA, errors=errors
+            step_id="user", data_schema=_credentials_schema(), errors=errors
         )
 
     async def async_step_reauth(
@@ -108,16 +120,17 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask for the password again and refresh the stored session."""
+        """Ask for the credentials again and refresh the stored session."""
         errors: dict[str, str] = {}
         existing = self._reauth_entry_data or {}
         email = existing.get(CONF_EMAIL) or ""
 
         if user_input is not None:
+            email = user_input[CONF_EMAIL].strip()
             new_data, error = await self._async_try_login(
                 email,
                 user_input[CONF_PASSWORD],
-                existing.get(CONF_COUNTRY) or DEFAULT_COUNTRY,
+                user_input.get(CONF_COUNTRY) or DEFAULT_COUNTRY,
             )
             if error:
                 errors["base"] = error
@@ -127,9 +140,49 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
                     data={**existing, **new_data},
                 )
 
+        # The email is asked for rather than taken from the entry, because an
+        # entry written before the email was stored has none, and a login with
+        # a blank email fails in the client before it reaches the cloud.
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=vol.Schema({vol.Required(CONF_PASSWORD): _SECRET}),
-            description_placeholders={"email": email},
+            data_schema=_credentials_schema(
+                email, existing.get(CONF_COUNTRY) or DEFAULT_COUNTRY
+            ),
+            description_placeholders={"email": email or "this account"},
+            errors=errors,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let the user point the entry at fresh credentials."""
+        errors: dict[str, str] = {}
+        entry = self._get_reconfigure_entry()
+        email = entry.data.get(CONF_EMAIL) or ""
+        country = entry.data.get(CONF_COUNTRY) or DEFAULT_COUNTRY
+
+        if user_input is not None:
+            email = user_input[CONF_EMAIL].strip()
+            country = user_input.get(CONF_COUNTRY) or DEFAULT_COUNTRY
+            new_data, error = await self._async_try_login(
+                email, user_input[CONF_PASSWORD], country
+            )
+            if error:
+                errors["base"] = error
+            elif str(new_data.get("uid")) != str(entry.unique_id):
+                # Reconfigure repairs one account's entry. A different account
+                # belongs in its own entry, or its sensors would silently
+                # change meaning.
+                return self.async_abort(reason="account_mismatch")
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data={**entry.data, **new_data},
+                    title=email,
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=_credentials_schema(email, country),
             errors=errors,
         )
