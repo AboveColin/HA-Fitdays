@@ -35,6 +35,7 @@ from .const import (
     DOMAIN,
     HISTORY_DAYS,
 )
+from .statistics import async_import_history
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
@@ -103,6 +104,9 @@ class FitdaysDataUpdateCoordinator(DataUpdateCoordinator):
             profiles[str(profile.suid)] = {
                 "profile": profile,
                 "latest": measurements[0] if measurements else None,
+                # The whole window is kept so the statistics import can read
+                # it; the sensors themselves only ever look at "latest".
+                "measurements": measurements,
                 "count": len(measurements),
                 "first_measured_at": (
                     measurements[-1].measured_at if measurements else None
@@ -150,6 +154,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Deliberately no update listener: renewing a token writes back to the
     # entry, and a reload-on-update listener would turn that into a loop.
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # After the platforms are set up every sensor has an entity id, which is
+    # what a statistics row is keyed by. The import itself hands the rows to
+    # the recorder and returns; it does not wait for them to be written.
+    await async_import_history(hass, entry)
     return True
 
 

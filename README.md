@@ -84,6 +84,27 @@ Per member profile:
 Heart rate only reports on scales that measure it (`measures_heart_rate` on the
 device). On a scale without it the sensor stays *unknown*, not *unavailable*.
 
+## History from the cloud
+
+The account keeps every weigh-in, and each refresh downloads 400 days of it.
+On every start the integration writes that history into Home Assistant's long
+term statistics, one row per hour, under each sensor's own entity id. A
+statistics graph card therefore shows the weight trend from before the
+integration was installed, not only from the day you set it up.
+
+What that does and does not give you:
+
+- Statistics only, so the numeric sensors (weight, BMI, body fat, and the rest
+  that carry a measurement state class) get a past. The counter and the
+  timestamp sensors do not.
+- Two weigh-ins in the same hour become one row holding their minimum, maximum
+  and mean, which is the resolution the recorder stores.
+- No state history and no logbook entries for the past. Home Assistant's own
+  history view starts when the integration does.
+- Importing the same hour again overwrites that row, so a restart rewrites
+  rather than duplicates.
+- The import is skipped when the recorder is not set up.
+
 ## Notes and limitations
 
 - Cloud polling every 30 minutes. A scale gets stepped on a couple of times a
@@ -93,6 +114,8 @@ device). On a scale without it the sensor stays *unknown*, not *unavailable*.
   unknown for that weigh-in rather than holding their previous value, and the
   `weight_only` attribute on the weight sensor says why.
 - The integration is read-only. It never writes to your Fitdays account.
+- The 400-day window is the client default. A measurement older than that is
+  not downloaded, so it cannot be imported either.
 - Brand artwork lives in `custom_components/fitdays/brand/` (icon and logo, at
   1x and 2x). The Fitdays teal square works on light and dark, so there are no
   separate dark-mode variants. Home Assistant reads that folder from 2026.3.0
