@@ -20,11 +20,6 @@ from typing import Any
 from homeassistant.components.recorder import DOMAIN as RECORDER_DOMAIN
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import async_import_statistics
-
-try:  # Home Assistant 2025.11 and later
-    from homeassistant.components.recorder.models import StatisticMeanType
-except ImportError:  # pragma: no cover - older cores only carry has_mean
-    StatisticMeanType = None  # type: ignore[assignment]
 from homeassistant.components.sensor import SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -32,6 +27,25 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
+
+try:  # Home Assistant 2025.11 and later
+    from homeassistant.components.recorder.models import StatisticMeanType
+except ImportError:  # pragma: no cover - older cores only carry has_mean
+    StatisticMeanType = None  # type: ignore[assignment]
+
+try:  # ``unit_class`` arrived after the 2024.11 floor supported here
+    from homeassistant.components.recorder.statistics import (
+        STATISTIC_UNIT_TO_UNIT_CONVERTER,
+    )
+except ImportError:  # pragma: no cover - older cores have no unit classes
+    STATISTIC_UNIT_TO_UNIT_CONVERTER = None  # type: ignore[assignment]
+
+# The recorder fills unit_class in itself today and warns about it; it starts
+# rejecting metadata without the key in 2026.11.
+_HAS_UNIT_CLASS = (
+    STATISTIC_UNIT_TO_UNIT_CONVERTER is not None
+    and "unit_class" in StatisticMetaData.__annotations__
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +80,9 @@ def _metadata(entity_id: str, unit: str | None) -> StatisticMetaData:
     Describe one sensor's statistics series.
 
     ``has_mean`` is the pre-2025.11 spelling and the recorder drops it in
-    2026.4, so ``mean_type`` is used wherever the enum exists.
+    2026.4, so ``mean_type`` is used wherever the enum exists. ``unit_class``
+    is derived the same way the recorder derives it, which keeps the metadata
+    valid once the recorder stops filling it in for us in 2026.11.
     """
     metadata: dict[str, Any] = {
         "has_sum": False,
@@ -79,6 +95,9 @@ def _metadata(entity_id: str, unit: str | None) -> StatisticMetaData:
         metadata["mean_type"] = StatisticMeanType.ARITHMETIC
     else:
         metadata["has_mean"] = True
+    if _HAS_UNIT_CLASS:
+        converter = STATISTIC_UNIT_TO_UNIT_CONVERTER.get(unit)
+        metadata["unit_class"] = converter.UNIT_CLASS if converter else None
     return metadata  # type: ignore[return-value]
 
 
