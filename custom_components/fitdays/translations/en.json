@@ -15,9 +15,26 @@
       },
       "reauth_confirm": {
         "title": "Re-authenticate Fitdays",
-        "description": "The stored session for {email} is no longer valid. Enter the password again to reconnect.",
+        "description": "The stored session for {email} is no longer valid. Enter the credentials again to reconnect.",
         "data": {
-          "password": "Password"
+          "email": "Email",
+          "password": "Password",
+          "country": "Country code"
+        },
+        "data_description": {
+          "country": "Two-letter code of the country your Fitdays account is registered in, for example NL."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Fitdays",
+        "description": "Sign in again to replace the stored session. The credentials must belong to the same Fitdays account as this entry.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "country": "Country code"
+        },
+        "data_description": {
+          "country": "Two-letter code of the country your Fitdays account is registered in, for example NL."
         }
       }
     },
@@ -28,7 +45,9 @@
     },
     "abort": {
       "already_configured": "This Fitdays account is already set up.",
-      "reauth_successful": "Re-authentication was successful."
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "Fitdays was reconfigured.",
+      "account_mismatch": "Those credentials are for a different Fitdays account. Add that account as a new entry instead."
     }
   },
   "entity": {

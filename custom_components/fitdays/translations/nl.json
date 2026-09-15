@@ -15,9 +15,26 @@
       },
       "reauth_confirm": {
         "title": "Fitdays opnieuw verbinden",
-        "description": "De opgeslagen sessie voor {email} is niet meer geldig. Voer het wachtwoord opnieuw in om te herverbinden.",
+        "description": "De opgeslagen sessie voor {email} is niet meer geldig. Voer de inloggegevens opnieuw in om te herverbinden.",
         "data": {
-          "password": "Wachtwoord"
+          "email": "E-mailadres",
+          "password": "Wachtwoord",
+          "country": "Landcode"
+        },
+        "data_description": {
+          "country": "Tweeletterige code van het land waar je Fitdays-account geregistreerd is, bijvoorbeeld NL."
+        }
+      },
+      "reconfigure": {
+        "title": "Fitdays opnieuw instellen",
+        "description": "Log opnieuw in om de opgeslagen sessie te vervangen. De inloggegevens moeten bij hetzelfde Fitdays-account horen als deze invoer.",
+        "data": {
+          "email": "E-mailadres",
+          "password": "Wachtwoord",
+          "country": "Landcode"
+        },
+        "data_description": {
+          "country": "Tweeletterige code van het land waar je Fitdays-account geregistreerd is, bijvoorbeeld NL."
         }
       }
     },
@@ -28,7 +45,9 @@
     },
     "abort": {
       "already_configured": "Dit Fitdays-account is al ingesteld.",
-      "reauth_successful": "Opnieuw verbinden is gelukt."
+      "reauth_successful": "Opnieuw verbinden is gelukt.",
+      "reconfigure_successful": "Fitdays is opnieuw ingesteld.",
+      "account_mismatch": "Deze inloggegevens horen bij een ander Fitdays-account. Voeg dat account toe als een nieuwe invoer."
     }
   },
   "entity": {
