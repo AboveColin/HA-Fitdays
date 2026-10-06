@@ -127,6 +127,13 @@ Not affiliated with or supported by GUANGDONG ICOMON or Fitdays. Built on
 [`fitdays`](https://github.com/AboveColin/fitdays), an unofficial client derived
 from the app's own traffic. The endpoints can change without notice.
 
+## Supporting the project
+
+This project is free and stays free. If it is useful to you, you can support its
+development through [GitHub Sponsors](https://github.com/sponsors/AboveColin).
+Sponsorship is voluntary and unlocks nothing: every feature, fix and security
+update ships in the public release.
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE).
