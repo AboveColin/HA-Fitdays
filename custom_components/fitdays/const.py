@@ -13,6 +13,18 @@ CONF_API_BASE = "api_base"
 CONF_COUNTRY = "country"
 CONF_LANGUAGE = "language"
 
+# Which cloud the account lives on. Entries created before Fitdays+ support
+# have no backend key and use the original Fitdays cloud.
+CONF_BACKEND = "backend"
+BACKEND_FITDAYS = "fitdays"
+BACKEND_PLUS = "fitdays_plus"
+
+# Fitdays+ session keys
+CONF_ACCOUNT_ID = "account_id"
+CONF_ACCESS_CODE = "access_code"
+CONF_ACCESS_SIGN = "access_sign"
+CONF_CLIENT_ID = "client_id"
+
 # Config flow input keys
 CONF_PASSWORD = "password"
 

@@ -3,25 +3,29 @@
     "step": {
       "user": {
         "title": "Fitdays-account",
-        "description": "Log in met hetzelfde e-mailadres en wachtwoord als in de Fitdays-app. Je wachtwoord wordt gehasht voordat het verstuurd wordt en wordt nooit als platte tekst opgeslagen.",
+        "description": "Log in met hetzelfde e-mailadres en wachtwoord als in de Fitdays- of Fitdays+-app. Je wachtwoord wordt gehasht voordat het verstuurd wordt en wordt nooit als platte tekst opgeslagen.",
         "data": {
+          "backend": "App",
           "email": "E-mailadres",
           "password": "Wachtwoord",
           "country": "Landcode"
         },
         "data_description": {
+          "backend": "De app die je met je weegschaal gebruikt. Kies Fitdays+ als de Fitdays-app je account daarheen heeft verhuisd.",
           "country": "Tweeletterige code van het land waar je Fitdays-account geregistreerd is, bijvoorbeeld NL."
         }
       },
       "reauth_confirm": {
         "title": "Fitdays opnieuw verbinden",
-        "description": "De opgeslagen sessie voor {email} is niet meer geldig. Voer de inloggegevens opnieuw in om te herverbinden.",
+        "description": "De opgeslagen sessie voor {email} is niet meer geldig. Voer de inloggegevens opnieuw in om te herverbinden. Heeft de Fitdays-app je account naar Fitdays+ verhuisd, kies dan Fitdays+.",
         "data": {
+          "backend": "App",
           "email": "E-mailadres",
           "password": "Wachtwoord",
           "country": "Landcode"
         },
         "data_description": {
+          "backend": "De app die je met je weegschaal gebruikt. Kies Fitdays+ als de Fitdays-app je account daarheen heeft verhuisd.",
           "country": "Tweeletterige code van het land waar je Fitdays-account geregistreerd is, bijvoorbeeld NL."
         }
       },
@@ -29,11 +33,13 @@
         "title": "Fitdays opnieuw instellen",
         "description": "Log opnieuw in om de opgeslagen sessie te vervangen. De inloggegevens moeten bij hetzelfde Fitdays-account horen als deze invoer.",
         "data": {
+          "backend": "App",
           "email": "E-mailadres",
           "password": "Wachtwoord",
           "country": "Landcode"
         },
         "data_description": {
+          "backend": "De app die je met je weegschaal gebruikt. Kies Fitdays+ als de Fitdays-app je account daarheen heeft verhuisd.",
           "country": "Tweeletterige code van het land waar je Fitdays-account geregistreerd is, bijvoorbeeld NL."
         }
       }
@@ -48,6 +54,14 @@
       "reauth_successful": "Opnieuw verbinden is gelukt.",
       "reconfigure_successful": "Fitdays is opnieuw ingesteld.",
       "account_mismatch": "Deze inloggegevens horen bij een ander Fitdays-account. Voeg dat account toe als een nieuwe invoer."
+    }
+  },
+  "selector": {
+    "backend": {
+      "options": {
+        "fitdays_plus": "Fitdays+",
+        "fitdays": "Fitdays"
+      }
     }
   },
   "entity": {
