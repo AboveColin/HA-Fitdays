@@ -53,11 +53,12 @@ restart.
 
 **Settings → Devices & Services → Add Integration → Fitdays**
 
-Enter the email and password you use in the Fitdays app, plus the two-letter
-country code your account is registered in, `NL` by default.
+Pick the app you use with your scale, **Fitdays+** or **Fitdays**. Then enter
+the email and password you use in that app, plus the two-letter country code
+your account is registered in, `NL` by default.
 
 Your password is hashed (double MD5, exactly as the app does it) before anything
-leaves Home Assistant, and only that digest is stored in the config entry, never
+leaves Home Assistant, and only the digest is stored in the config entry, never
 the plaintext. The digest is what lets the integration silently renew an expired
 session without asking you to log in again.
 
@@ -104,6 +105,16 @@ What that does and does not give you:
 - Importing the same hour again overwrites that row, so a restart rewrites
   rather than duplicates.
 - The import is skipped when the recorder is not set up.
+
+### Moved to Fitdays+?
+
+Recent versions of the Fitdays app offer to move your account to Fitdays+.
+After the move, the old Fitdays login stops working and Home Assistant asks you
+to sign in again. Choose **Fitdays+** in that dialog and use the same email and
+password.
+
+Fitdays+ numbers its member profiles differently, so the sensors come back as
+new entities. Long-term history from the old entities stays where it is.
 
 ## Notes and limitations
 

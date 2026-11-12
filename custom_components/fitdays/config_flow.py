@@ -11,12 +11,23 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
 )
 
-from .const import CONF_COUNTRY, DEFAULT_COUNTRY, DOMAIN
+from .backends import entry_backend, entry_unique_id
+from .const import (
+    BACKEND_FITDAYS,
+    BACKEND_PLUS,
+    CONF_BACKEND,
+    CONF_COUNTRY,
+    DEFAULT_COUNTRY,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,8 +35,18 @@ _LOGGER = logging.getLogger(__name__)
 # with type PASSWORD makes the browser treat it as a password field.
 _SECRET = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 
+# Fitdays+ comes first: the Fitdays app now moves accounts there, and a moved
+# account can no longer sign in to the original cloud.
+_BACKEND = SelectSelector(
+    SelectSelectorConfig(
+        options=[BACKEND_PLUS, BACKEND_FITDAYS],
+        translation_key="backend",
+        mode=SelectSelectorMode.LIST,
+    )
+)
+
 try:
-    from fitdays import FitdaysClient
+    from fitdays import FitdaysClient, FitdaysPlusClient
     from fitdays.exceptions import (
         FitdaysAuthError,
         FitdaysError,
@@ -37,10 +58,15 @@ except ImportError as err:  # pragma: no cover - handled by manifest requirement
     raise
 
 
-def _credentials_schema(email: str = "", country: str = DEFAULT_COUNTRY) -> vol.Schema:
-    """Build the email/password/country form, prefilled with what we know."""
+def _credentials_schema(
+    email: str = "",
+    country: str = DEFAULT_COUNTRY,
+    backend: str = BACKEND_PLUS,
+) -> vol.Schema:
+    """Build the app/email/password/country form, prefilled with what we know."""
     return vol.Schema(
         {
+            vol.Required(CONF_BACKEND, default=backend): _BACKEND,
             vol.Required(CONF_EMAIL, default=email): str,
             vol.Required(CONF_PASSWORD): _SECRET,
             vol.Optional(CONF_COUNTRY, default=country or DEFAULT_COUNTRY): str,
@@ -57,20 +83,24 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
         self._reauth_entry_data: Mapping[str, Any] | None = None
 
     async def _async_try_login(
-        self, email: str, password: str, country: str
+        self, user_input: dict[str, Any]
     ) -> tuple[dict[str, Any] | None, str | None]:
         """Attempt a login. Returns (entry_data, error_key)."""
         # Import here so the module stays importable when the requirement is
         # still being installed.
         from . import entry_data_from_session  # pylint: disable=import-outside-toplevel
 
-        session = async_get_clientsession(self.hass)
+        client_class = (
+            FitdaysPlusClient
+            if user_input.get(CONF_BACKEND) == BACKEND_PLUS
+            else FitdaysClient
+        )
         try:
-            client = await FitdaysClient.login(
-                email,
-                password,
-                http_session=session,
-                country=country or DEFAULT_COUNTRY,
+            client = await client_class.login(
+                user_input[CONF_EMAIL].strip(),
+                user_input[CONF_PASSWORD],
+                http_session=async_get_clientsession(self.hass),
+                country=user_input.get(CONF_COUNTRY) or DEFAULT_COUNTRY,
             )
         except FitdaysAuthError:
             return None, "invalid_auth"
@@ -94,15 +124,11 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             email = user_input[CONF_EMAIL].strip()
-            entry_data, error = await self._async_try_login(
-                email,
-                user_input[CONF_PASSWORD],
-                user_input.get(CONF_COUNTRY, DEFAULT_COUNTRY),
-            )
+            entry_data, error = await self._async_try_login(user_input)
             if error:
                 errors["base"] = error
             else:
-                await self.async_set_unique_id(str(entry_data.get("uid")))
+                await self.async_set_unique_id(entry_unique_id(entry_data))
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(title=email, data=entry_data)
 
@@ -126,18 +152,15 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
         email = existing.get(CONF_EMAIL) or ""
 
         if user_input is not None:
-            email = user_input[CONF_EMAIL].strip()
-            new_data, error = await self._async_try_login(
-                email,
-                user_input[CONF_PASSWORD],
-                user_input.get(CONF_COUNTRY) or DEFAULT_COUNTRY,
-            )
+            new_data, error = await self._async_try_login(user_input)
             if error:
                 errors["base"] = error
             else:
+                # The new session replaces the old one whole. Merging would keep
+                # the other backend's credentials when the user switches app.
                 return self.async_update_reload_and_abort(
                     self._get_reauth_entry(),
-                    data={**existing, **new_data},
+                    data=new_data,
                 )
 
         # The email is asked for rather than taken from the entry, because an
@@ -146,7 +169,9 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=_credentials_schema(
-                email, existing.get(CONF_COUNTRY) or DEFAULT_COUNTRY
+                email,
+                existing.get(CONF_COUNTRY) or DEFAULT_COUNTRY,
+                entry_backend(existing),
             ),
             description_placeholders={"email": email or "this account"},
             errors=errors,
@@ -160,16 +185,16 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
         entry = self._get_reconfigure_entry()
         email = entry.data.get(CONF_EMAIL) or ""
         country = entry.data.get(CONF_COUNTRY) or DEFAULT_COUNTRY
+        backend = entry_backend(entry.data)
 
         if user_input is not None:
             email = user_input[CONF_EMAIL].strip()
             country = user_input.get(CONF_COUNTRY) or DEFAULT_COUNTRY
-            new_data, error = await self._async_try_login(
-                email, user_input[CONF_PASSWORD], country
-            )
+            backend = user_input.get(CONF_BACKEND) or backend
+            new_data, error = await self._async_try_login(user_input)
             if error:
                 errors["base"] = error
-            elif str(new_data.get("uid")) != str(entry.unique_id):
+            elif entry_unique_id(new_data) != str(entry.unique_id):
                 # Reconfigure repairs one account's entry. A different account
                 # belongs in its own entry, or its sensors would silently
                 # change meaning.
@@ -177,12 +202,12 @@ class FitdaysConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_update_reload_and_abort(
                     entry,
-                    data={**entry.data, **new_data},
+                    data=new_data,
                     title=email,
                 )
 
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=_credentials_schema(email, country),
+            data_schema=_credentials_schema(email, country, backend),
             errors=errors,
         )

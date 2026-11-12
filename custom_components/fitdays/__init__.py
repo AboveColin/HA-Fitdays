@@ -16,15 +16,23 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 _LOGGER = logging.getLogger(__name__)
 
 try:
-    from fitdays import FitdaysClient, Session
+    from fitdays import FitdaysClient, FitdaysPlusClient, PlusSession, Session
     from fitdays.exceptions import FitdaysAuthError, FitdaysError
 except ImportError as err:  # pragma: no cover - handled by manifest requirements
     _LOGGER.error("Failed to import the fitdays package: %s", err)
     raise
 
+from .backends import entry_backend
 from .const import (
+    BACKEND_FITDAYS,
+    BACKEND_PLUS,
+    CONF_ACCESS_CODE,
+    CONF_ACCESS_SIGN,
+    CONF_ACCOUNT_ID,
     CONF_ACTIVE_SUID,
     CONF_API_BASE,
+    CONF_BACKEND,
+    CONF_CLIENT_ID,
     CONF_COUNTRY,
     CONF_EMAIL,
     CONF_LANGUAGE,
@@ -44,9 +52,21 @@ PLATFORMS: list[Platform] = [Platform.SENSOR]
 SCAN_INTERVAL = timedelta(minutes=30)
 
 
-def session_from_entry(entry: ConfigEntry) -> Session:
-    """Rebuild a :class:`Session` from the config-entry data."""
+def session_from_entry(entry: ConfigEntry) -> Session | PlusSession:
+    """Rebuild the client session from the config-entry data."""
     data = entry.data
+    if entry_backend(data) == BACKEND_PLUS:
+        return PlusSession(
+            token=data.get(CONF_TOKEN),
+            account_id=data.get(CONF_ACCOUNT_ID),
+            email=data.get(CONF_EMAIL),
+            access_code=data.get(CONF_ACCESS_CODE),
+            access_sign=data.get(CONF_ACCESS_SIGN),
+            client_id=data.get(CONF_CLIENT_ID),
+            api_base=data.get(CONF_API_BASE),
+            country=data.get(CONF_COUNTRY),
+            language=data.get(CONF_LANGUAGE),
+        )
     return Session(
         token=data.get(CONF_TOKEN),
         refresh_token=data.get(CONF_REFRESH_TOKEN),
@@ -60,9 +80,23 @@ def session_from_entry(entry: ConfigEntry) -> Session:
     )
 
 
-def entry_data_from_session(session: Session) -> dict[str, Any]:
-    """Flatten a :class:`Session` back into config-entry data."""
+def entry_data_from_session(session: Session | PlusSession) -> dict[str, Any]:
+    """Flatten a client session back into config-entry data."""
+    if isinstance(session, PlusSession):
+        return {
+            CONF_BACKEND: BACKEND_PLUS,
+            CONF_TOKEN: session.token,
+            CONF_ACCOUNT_ID: session.account_id,
+            CONF_EMAIL: session.email,
+            CONF_ACCESS_CODE: session.access_code,
+            CONF_ACCESS_SIGN: session.access_sign,
+            CONF_CLIENT_ID: session.client_id,
+            CONF_API_BASE: session.api_base,
+            CONF_COUNTRY: session.country,
+            CONF_LANGUAGE: session.language,
+        }
     return {
+        CONF_BACKEND: BACKEND_FITDAYS,
         CONF_TOKEN: session.token,
         CONF_REFRESH_TOKEN: session.refresh_token,
         CONF_UID: session.uid,
@@ -78,7 +112,9 @@ def entry_data_from_session(session: Session) -> dict[str, Any]:
 class FitdaysDataUpdateCoordinator(DataUpdateCoordinator):
     """Fetch the account's measurement history on a schedule."""
 
-    def __init__(self, hass: HomeAssistant, client: FitdaysClient) -> None:
+    def __init__(
+        self, hass: HomeAssistant, client: FitdaysClient | FitdaysPlusClient
+    ) -> None:
         super().__init__(
             hass,
             _LOGGER,
@@ -124,15 +160,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Fitdays from a config entry."""
     http_session = async_get_clientsession(hass)
 
-    def save_session(session: Session) -> None:
+    def save_session(session: Session | PlusSession) -> None:
         """Persist a renewed token back onto the config entry."""
         hass.config_entries.async_update_entry(
             entry,
             data={**entry.data, **entry_data_from_session(session)},
         )
 
-    client = FitdaysClient.from_session(
-        session_from_entry(entry),
+    session = session_from_entry(entry)
+    client_class = (
+        FitdaysPlusClient if isinstance(session, PlusSession) else FitdaysClient
+    )
+    client = client_class.from_session(
+        session,
         http_session=http_session,
         token_updated=save_session,
     )
